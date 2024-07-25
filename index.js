@@ -37,6 +37,27 @@ let touchStartY = 0;
 let touchEndX = 0;
 let touchEndY = 0;
 
+// item 추가
+let giftX = Math.floor(Math.random() * tileCount);
+let giftY = Math.floor(Math.random() * tileCount);
+let giftState = 1; // 상태 값: 1, 2, 3 중 하나
+
+let gameStartTime;
+const giftDisplayDelay = 10000; // 선물이 노출되기까지의 지연 시간 (밀리초)
+let giftVisible = false; // 선물의 가시성 상태
+let giftStartTime; // 선물이 노출된 시작 시간
+
+let giftMessage = ""; // 상태 메시지를 저장할 변수
+const messageOffsetX = 10; // 메시지와 뱀의 머리 사이의 간격
+const messageOffsetY = tileSize / 2; // 메시지의 세로 위치 조정
+const giftMessageDisplayDuration = 2000; // 메시지 노출 지속 시간 (밀리초)
+
+// case5 사과 폭탄
+let apples = []; // 랜덤 위치에 나타날 사과 배열
+let appleStartTime = 0; // 사과 노출 시작 시간
+const appleDisplayDuration = 5000; // 사과 노출 지속 시간 (밀리초)
+
+
 canvas.addEventListener("touchstart", handleTouchStart, false);
 canvas.addEventListener("touchend", handleTouchEnd, false);
 
@@ -93,10 +114,19 @@ function drawGame() {
   clearScreen();
 
   checkAppleCollision();
-  drawApple();
   drawSnake();
+  drawApple();
+  checkGiftVisibility(); // 선물 가시성 체크
+  drawGift(); // 선물 그리기
 
   drawScore();
+
+  // 사과가 노출된 상태일 때 사과 그리기
+  if (apples.length > 0) {
+    drawApples(); // 사과 그리기
+  }
+
+  checkGiftCollision(); // 선물 충돌 확인
 
   if (score > 5) {
     speed = 9;
@@ -164,9 +194,22 @@ function isGameOver() {
 function drawScore() {
   ctx.fillStyle = "white";
   ctx.font = "10px Verdana";
-  ctx.fillText("현재 점수 " + score, canvas.width - 50, 10);
-  ctx.fillText("최고 점수 " + highScore, canvas.width - 110, 10);
+  ctx.fillText("현재 점수 " + score, canvas.width - 60, 10);
+  ctx.fillText("최고 점수 " + highScore, canvas.width - 120, 10);
 
+  // 상태 메시지를 뱀의 머리 오른쪽에 표시
+  if (giftMessage) {
+    ctx.font = "20px Verdana"; // 상태 메시지 폰트 크기
+    ctx.fillStyle = "lime"; // 상태 메시지 색상
+    const messageX = (headX * tileCount) + tileSize + messageOffsetX;
+    const messageY = (headY * tileCount) + messageOffsetY;
+    ctx.fillText(giftMessage, messageX, messageY);
+
+    // 메시지 노출 후 3초가 지나면 빈 문자열로 초기화
+    if (Date.now() - giftMessageStartTime >= giftMessageDisplayDuration) {
+      giftMessage = ""; // 상태 메시지 초기화
+    }
+  }
 }
 
 function clearScreen() {
@@ -175,7 +218,7 @@ function clearScreen() {
 }
 
 function drawSnake() {
-  ctx.fillStyle = "green";
+  ctx.fillStyle = "skyBlue";
   for (let i = 0; i < snakeParts.length; i++) {
     let part = snakeParts[i];
     ctx.fillRect(part.x * tileCount, part.y * tileCount, tileSize, tileSize);
@@ -197,16 +240,167 @@ function changeSnakePosition() {
 
 function drawApple() {
   ctx.fillStyle = "red";
-  ctx.fillRect(appleX * tileCount, appleY * tileCount, tileSize, tileSize);
+  
+  // 사과의 위치 및 크기 설정
+  const x = appleX * tileCount;
+  const y = appleY * tileCount;
+  const size = tileSize;
+
+  // 둥근 모서리를 가진 사각형 그리기
+  const radius = 8; // 둥글게 할 반지름
+
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + size - radius, y);
+  ctx.arc(x + size - radius, y + radius, radius, 1.5 * Math.PI, 2 * Math.PI);
+  ctx.lineTo(x + size, y + size - radius);
+  ctx.arc(x + size - radius, y + size - radius, radius, 0, 0.5 * Math.PI);
+  ctx.lineTo(x + radius, y + size);
+  ctx.arc(x + radius, y + size - radius, radius, 0.5 * Math.PI, Math.PI);
+  ctx.lineTo(x, y + radius);
+  ctx.arc(x + radius, y + radius, radius, Math.PI, 1.5 * Math.PI);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawGift() {
+  if (!giftVisible) return; // 선물이 보이지 않을 때는 그리지 않음
+  
+  ctx.fillStyle = "gold"; // 선물 색상
+
+  const centerX = giftX * tileCount + tileSize / 2;
+  const centerY = giftY * tileCount + tileSize / 2;
+  const radius = tileSize / 2; // 별의 크기
+
+  // 별 모양 그리기
+  const spikes = 5; // 별의 점 개수
+  const outerRadius = radius;
+  const innerRadius = radius / 2.5; // 별의 안쪽 반지름
+  const step = Math.PI / spikes; // 별의 각 점을 계산하기 위한 각도
+
+  ctx.beginPath();
+  for (let i = 0; i < 2 * spikes; i++) {
+    // 외부 점과 내부 점을 번갈아 가며 그립니다
+    const angle = i * step;
+    const r = i % 2 === 0 ? outerRadius : innerRadius;
+    const x = centerX + r * Math.cos(angle);
+    const y = centerY + r * Math.sin(angle);
+    ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.fill();
+}
+
+
+function checkGiftCollision() {
+  if (!giftVisible) return; // 선물이 보이지 않을 때는 충돌 체크를 하지 않음
+
+  if (giftX === headX && giftY === headY) {
+    // 선물 상태에 따라 동작 수행
+    switch (giftState) {
+      case 1:
+        // 상태 1: 점수 증가
+        score += 10;
+        giftMessage = "점수 +10";
+        break;
+      case 2:
+        // 상태 2: 속도 증가
+        speed += 2;
+        giftMessage = "속도 증가";
+        break;
+      case 3:
+        // 상태 3: 뱀의 길이 증가
+        tailLength += 4;
+        giftMessage = "길이 증가";
+        break;
+      case 4:
+      // 상태 3: 뱀의 길이 감소
+      tailLength -= 2;
+      giftMessage = "길이 감소";
+      break;
+      case 5:
+      // 상태 5: 사과 20개 랜덤 위치에 노출
+      apples = []; // 사과 배열 초기화
+      for (let i = 0; i < 20; i++) {
+        apples.push({
+          x: Math.floor(Math.random() * tileCount),
+          y: Math.floor(Math.random() * tileCount)
+        });
+      }
+      appleStartTime = Date.now(); // 사과 노출 시작 시간 설정
+      giftMessage = "보너스!";
+      break;
+    }
+    
+    // 상태 메시지 시작 시간 설정
+    giftMessageStartTime = Date.now();
+  
+    giftVisible = false; // 현재 선물 숨기기
+    giftStartTime = Date.now(); // 선물 노출 시간을 현재 시간으로 설정
+    gulpSound.play(); // 충돌 시 소리 재생 (선택 사항)
+
+    // 새로운 선물 위치와 상태를 랜덤으로 설정
+    giftX = Math.floor(Math.random() * tileCount);
+    giftY = Math.floor(Math.random() * tileCount);
+    giftState = Math.floor(Math.random() * 5) + 1; // 1, 2, 3, 4 중 하나
+    // giftState = 5
+
+    gulpSound.play(); // 충돌 시 소리 재생 (선택 사항)
+  }
+}
+
+function drawApples() {
+  ctx.fillStyle = "red"; // 사과 색상
+  apples.forEach(apple => {
+    ctx.beginPath();
+    const x = apple.x * tileCount;
+    const y = apple.y * tileCount;
+    const size = tileSize;
+    const radius = 8; // 둥글게 할 반지름
+
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + size - radius, y);
+    ctx.arc(x + size - radius, y + radius, radius, 1.5 * Math.PI, 2 * Math.PI);
+    ctx.lineTo(x + size, y + size - radius);
+    ctx.arc(x + size - radius, y + size - radius, radius, 0, 0.5 * Math.PI);
+    ctx.lineTo(x + radius, y + size);
+    ctx.arc(x + radius, y + size - radius, radius, 0.5 * Math.PI, Math.PI);
+    ctx.lineTo(x, y + radius);
+    ctx.arc(x + radius, y + radius, radius, Math.PI, 1.5 * Math.PI);
+    ctx.closePath();
+    ctx.fill();
+  });
+
+  // 사과 노출 시간이 지난 후 사과를 숨깁니다
+  if (Date.now() - appleStartTime >= appleDisplayDuration) {
+    apples = []; // 사과 배열 비우기
+  }
 }
 
 function checkAppleCollision() {
-  if (appleX === headX && appleY === headY) {
-    appleX = Math.floor(Math.random() * tileCount);
-    appleY = Math.floor(Math.random() * tileCount);
-    tailLength++;
-    score++;
-    gulpSound.play();
+  if (apples.length > 0) { // 사과가 있는 경우
+    // 사과 배열에서 충돌한 사과를 찾습니다
+    apples = apples.filter(apple => {
+      if (apple.x === headX && apple.y === headY) {
+        // 충돌한 사과를 배열에서 제거하고 점수를 증가시킵니다
+        score++;
+        tailLength++;
+        gulpSound.play();
+        return false; // 이 사과를 배열에서 제거합니다
+      }
+      return true; // 충돌하지 않은 사과는 유지합니다
+    });
+  } else {
+    if (appleX === headX && appleY === headY) {
+      // 충돌한 사과를 배열에서 제거하고 점수를 증가시킵니다
+      score++;
+      tailLength++;
+      gulpSound.play();
+      
+      // 새로운 사과 위치 설정
+      appleX = Math.floor(Math.random() * tileCount);
+      appleY = Math.floor(Math.random() * tileCount);
+    }
   }
 }
 
@@ -246,4 +440,27 @@ function restartGame() {
   window.location.reload();
 }
 
+function checkGiftVisibility() {
+  const currentTime = Date.now();
+  
+  // 선물이 보이지 않거나 선물이 처음 노출되었을 때
+  if (!giftVisible && currentTime - giftStartTime >= giftDisplayDelay) {
+    // 10초가 지났다면 선물 보이기
+    giftVisible = true;
+    giftStartTime = currentTime; // 선물이 노출된 시간을 현재 시간으로 설정
+  } else if (giftVisible && currentTime - giftStartTime >= giftDisplayDelay) {
+    // 선물이 보이고 10초가 지나면 선물 숨기기
+    giftVisible = false;
+    giftStartTime = currentTime; // 선물이 숨겨진 시간을 현재 시간으로 설정
+  }
+}
+
+function initializeGame() {
+  gameStartTime = Date.now();
+  giftVisible = false; // 게임 시작 시 선물은 보이지 않음
+  giftStartTime = gameStartTime; // 게임 시작 시간으로 설정
+  // 기타 초기화 코드
+}
+ 
+initializeGame();
 drawGame();
