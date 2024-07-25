@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        body{
+            margin: 0px;
+            padding: 0px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        canvas{
+            box-shadow: black 20px 10px 50px;
+        }
+        #restartButton {
+            display: none;
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 10px 20px;
+            font-size: 20px;
+            cursor: pointer;
+            background-color: #f44336;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+    </style>    
+</head>
+
+<body style="overscroll-behavior-y: contain; background:#313131;">
+    <h1 style="color:lavender;">Snake game</h1>
+    <canvas id="game" width="400" height="400"></canvas>
+    <button id="restartButton" onclick="restartGame()">다시 시작</button>
+    <script src="index.js"></script>
+</body>
+</html>
