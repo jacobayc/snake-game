@@ -13,55 +13,40 @@ class SnakePart {
 
 let isGameStarted = false; // 게임 상태 체크
 let isWallLessMode = false; // 벽 없는 모드 상태
-
+let vibrateEnabled = false; // 진동 상태를 나타내는 변수
 let speed = 5;
-
 let tileCount = 20;
 let tileSize = canvas.width / tileCount -2; //타일 크기
-
 let headX = 10;
 let headY = 10;
 const snakeParts = [];
 let tailLength = 2;
-
 let appleX = 5;
 let appleY = 5;
-
 let inputsXVelocity = 0;
 let inputsYVelocity = 0;
-
 let xVelocity = 0;
 let yVelocity = 0;
-
 let score = 0;
 let highScore = localStorage.getItem('highScore') ? parseInt(localStorage.getItem('highScore')) : 0; // 로컬스토리지에서 최고 점수 불러오기
-
 const gulpSound = new Audio("gulp.mp3");
-
 let touchStartX = 0;
 let touchStartY = 0;
 let touchEndX = 0;
 let touchEndY = 0;
-
-// item 추가
-let giftX = Math.floor(Math.random() * tileCount);
+let giftX = Math.floor(Math.random() * tileCount); // item 추가
 let giftY = Math.floor(Math.random() * tileCount);
 let giftState = 1; // 상태 값: 1, 2, 3 중 하나
-
 const giftColors = ["gold", "cyan", "salmon","lavender", "blue", "lime", "purple", "pink"];
-
 let gameStartTime;
 const giftDisplayDelay = 10000; // 선물이 노출되기까지의 지연 시간 (밀리초)
 let giftVisible = false; // 선물의 가시성 상태
 let giftStartTime; // 선물이 노출된 시작 시간
-
 let giftMessage = ""; // 상태 메시지를 저장할 변수
 const messageOffsetX = 10; // 메시지와 뱀의 머리 사이의 간격
 const messageOffsetY = tileSize / 2; // 메시지의 세로 위치 조정
 const giftMessageDisplayDuration = 2000; // 메시지 노출 지속 시간 (밀리초)
-
-// case5 사과 폭탄
-let apples = []; // 랜덤 위치에 나타날 사과 배열
+let apples = []; // 랜덤 위치에 나타날 사과 배열 // case5 사과 폭탄
 let appleStartTime = 0; // 사과 노출 시작 시간
 const appleDisplayDuration = 7000; // 사과 노출 지속 시간 (밀리초)
 
@@ -122,28 +107,21 @@ function drawGame() {
   }
 
   clearScreen();
-
   checkAppleCollision();
   drawSnake();
   drawApple();
   checkGiftVisibility(); // 선물 가시성 체크
   drawGift(); // 선물 그리기
-
   drawScore();
 
   // 사과가 노출된 상태일 때 사과 그리기
   if (apples.length > 0) {
     drawApples(); // 사과 그리기
   }
-
   checkGiftCollision(); // 선물 충돌 확인
 
-  if (score > 20) {
-    speed = 10;
-  }
-  if (score > 60) {
-    speed = 20;
-  }
+  if (score > 20) speed = 10;
+  if (score > 60) speed = 20;
 
   setTimeout(drawGame, 1000 / speed);
 }
@@ -156,8 +134,10 @@ function isGameOver() {
   }
 
   //walls
-  if (headX < 0 || headX >= tileCount || headY < 0 || headY >= tileCount) {
-    gameOver = true;
+  if (!isWallLessMode) {
+    if (headX < 0 || headX >= tileCount || headY < 0 || headY >= tileCount) {
+      gameOver = true;
+    }
   }
 
   for (let i = 0; i < snakeParts.length; i++) {
@@ -182,20 +162,12 @@ function isGameOver() {
     gradient.addColorStop("0.5", "blue");
     gradient.addColorStop("1.0", "red");
     ctx.fillStyle = gradient;
-    // 첫 번째 줄
-    ctx.fillText("Game Over", canvas.width / 6.5, canvas.height / 2 - 25); 
-
-    //최고 점수 표시
-    ctx.font = "20px Verdana"; // 폰트 크기 조절
+    ctx.fillText("Game Over", canvas.width / 6.5, canvas.height / 2 - 25); // 첫 번째 줄
+    ctx.font = "20px Verdana"; // 폰트 크기 조절 //최고 점수 표시
     ctx.fillStyle = "white"; // 색상 조절 (필요시)
-    ctx.fillText("현재 최고점수: " + highScore, canvas.width / 6.5, canvas.height / 2 + 25);
+    ctx.fillText("현재 최고점수: " + highScore, canvas.width / 6.5, canvas.height / 2 + 25); // 두 번째 줄
 
-     // 다시 시작 버튼 표시
-     document.getElementById("restartButton").style.display = "block";
-
-    // setTimeout(()=> {
-    //   window.location.reload();
-    // },2000)
+     document.getElementById("restartButton").style.display = "block";  // 다시 시작 버튼 표시
   }
 
   return gameOver;
@@ -208,7 +180,7 @@ function drawScore() {
   ctx.fillText("최고 점수 " + highScore, canvas.width - 120, 10);
 
 
-  // 상태 메시지를 뱀의 머리 오른쪽에 표시
+  // item 획득 메시지 표시
   if (giftMessage) {
     ctx.font = "20px Verdana"; // 상태 메시지 폰트 크기
     ctx.fillStyle = "lime"; // 상태 메시지 색상
@@ -224,7 +196,7 @@ function drawScore() {
 }
 
 function clearScreen() {
-  ctx.fillStyle = "black";
+  ctx.fillStyle = "#313131";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
@@ -461,6 +433,62 @@ function keyDown(event) {
   }
 }
 
+
+function toggleVibrate() {
+  vibrateEnabled = !vibrateEnabled; // 진동 상태 토글
+  document.getElementById('vibrateStatus').textContent = vibrateEnabled ? '진동 on' : '진동 off';
+  document.getElementById('vibrateToggle').textContent = vibrateEnabled ? '진동 끄기' : '진동 켜기';
+}
+
+//controller
+document.getElementById('up').addEventListener('click', () => setDirection('UP'));
+document.getElementById('left').addEventListener('click', () => setDirection('LEFT'));
+document.getElementById('right').addEventListener('click', () => setDirection('RIGHT'));
+document.getElementById('down').addEventListener('click', () => setDirection('DOWN'));
+
+navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mozVibrate || navigator.msVibrate;
+
+function setDirection(direction) {
+  if (navigator.vibrate && vibrateEnabled) {
+    navigator.vibrate(100); // 진동
+  }
+
+  let newInputsXVelocity = inputsXVelocity;
+  let newInputsYVelocity = inputsYVelocity;
+
+  switch(direction) {
+    case 'UP':
+      if (inputsYVelocity !== 1) {
+        newInputsYVelocity = -1;
+        newInputsXVelocity = 0;
+      }
+      break;
+    case 'DOWN':
+      if (inputsYVelocity !== -1) {
+        newInputsYVelocity = 1;
+        newInputsXVelocity = 0;
+      }
+      break;
+    case 'LEFT':
+      if (inputsXVelocity !== 1) {
+        newInputsYVelocity = 0;
+        newInputsXVelocity = -1;
+      }
+      break;
+    case 'RIGHT':
+      if (inputsXVelocity !== -1) {
+        newInputsYVelocity = 0;
+        newInputsXVelocity = 1;
+      }
+      break;
+  }
+  // 현재 입력 속도와 새 속도가 다를 경우에만 업데이트
+  if (inputsXVelocity !== newInputsXVelocity || inputsYVelocity !== newInputsYVelocity) {
+    inputsXVelocity = newInputsXVelocity;
+    inputsYVelocity = newInputsYVelocity;
+  }
+}
+
 function restartGame() {
   window.location.reload();
 }
@@ -492,13 +520,3 @@ function startGame(isWallLess = false) {
     drawGame();
   }
 }
-
-// function initializeGame() {
-//   gameStartTime = Date.now();
-//   giftVisible = false; // 게임 시작 시 선물은 보이지 않음
-//   giftStartTime = gameStartTime; // 게임 시작 시간으로 설정
-//   // 기타 초기화 코드
-// }
- 
-// initializeGame();
-// drawGame();
