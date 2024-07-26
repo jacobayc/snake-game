@@ -94,12 +94,17 @@ function handleSwipe() {
   }
 }
 
-function drawGame() {
+let lastRenderTime = 0;
+function drawGame(timestamp) {
   if (!isGameStarted) return; // 게임이 시작되지 않았으면 drawGame을 실행하지 않음
+
+  const elapsed = timestamp - lastRenderTime;
+  if (elapsed > 1000 / speed) {
   xVelocity = inputsXVelocity;
   yVelocity = inputsYVelocity;
 
   changeSnakePosition();
+  
   let result = isGameOver();
   if (result) {
     isGameStarted = false; // 게임 오버 시 게임 시작 상태를 false로 설정
@@ -123,7 +128,9 @@ function drawGame() {
   if (score > 20) speed = 10;
   if (score > 60) speed = 20;
 
-  setTimeout(drawGame, 1000 / speed);
+  lastRenderTime = timestamp;
+  }
+  requestAnimationFrame(drawGame);
 }
 
 function isGameOver() {
@@ -517,6 +524,7 @@ function startGame(isWallLess = false) {
     gameStartTime = Date.now();
     giftVisible = false; // 게임 시작 시 선물은 보이지 않음
     giftStartTime = gameStartTime; // 게임 시작 시간으로 설정
-    drawGame();
+    lastRenderTime = 0;
+    requestAnimationFrame(drawGame); // requestAnimationFrame 호출
   }
 }
