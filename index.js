@@ -2,6 +2,8 @@ const canvas = document.getElementById("game");
 canvas.width = 400;
 canvas.height = 400;
 const ctx = canvas.getContext("2d");
+let controller = document.querySelector('.controller'); 
+const toggleButton = document.querySelector('.toggle-button');
 
 // localStorage.removeItem('highScore')
 class SnakePart {
@@ -10,6 +12,11 @@ class SnakePart {
     this.y = y;
   }
 }
+// 드래그 상태를 관리할 변수
+let isDragging = false;
+let offsetX = 0;
+let offsetY = 0;
+let isDraggableMode = false; // 드래그 모드 상태
 
 let isGameStarted = false; // 게임 상태 체크
 let isWallLessMode = false; // 벽 없는 모드 상태
@@ -51,6 +58,75 @@ let appleStartTime = 0; // 사과 노출 시작 시간
 const appleDisplayDuration = 7000; // 사과 노출 지속 시간 (밀리초)
 
 
+// 드래그 시작 이벤트 핸들러
+ // 드래그 시작 이벤트 핸들러
+ function startDrag(event) {
+  if (!isDraggableMode) return;
+  isDragging = true;
+
+  // 터치 또는 마우스 위치에서 요소의 좌측 상단 좌표까지의 오프셋을 계산합니다.
+  const rect = controller.getBoundingClientRect();
+  if (event.type === 'mousedown') {
+      offsetX = event.clientX - rect.left;
+      offsetY = event.clientY - rect.top;
+  } else if (event.type === 'touchstart') {
+      offsetX = event.touches[0].clientX - rect.left;
+      offsetY = event.touches[0].clientY - rect.top;
+  }
+
+  controller.classList.add("dragging");
+
+  // 문서 전체에서 마우스/터치 이동 및 버튼 해제 이벤트를 감지합니다.
+  document.addEventListener("mousemove", onMouseMove);
+  document.addEventListener("mouseup", endDrag);
+  document.addEventListener("touchmove", onTouchMove);
+  document.addEventListener("touchend", endDrag);
+}
+
+// 마우스/터치 이동 이벤트 핸들러
+function onMouseMove(event) {
+  if (isDragging) {
+      let clientX = event.clientX;
+      let clientY = event.clientY;
+      controller.style.left = `${clientX - offsetX}px`;
+      controller.style.top = `${clientY - offsetY}px`;
+  }
+}
+
+function onTouchMove(event) {
+  if (isDragging) {
+      let clientX = event.touches[0].clientX;
+      let clientY = event.touches[0].clientY;
+      controller.style.left = `${clientX - offsetX}px`;
+      controller.style.top = `${clientY - offsetY}px`;
+  }
+}
+
+// 드래그 종료 이벤트 핸들러
+function endDrag() {
+  isDragging = false;
+  controller.classList.remove("dragging");
+
+  // 이벤트 리스너를 제거합니다.
+  document.removeEventListener("mousemove", onMouseMove);
+  document.removeEventListener("mouseup", endDrag);
+  document.removeEventListener("touchmove", onTouchMove);
+  document.removeEventListener("touchend", endDrag);
+}
+
+// 드래그 모드 토글 함수
+function toggleDragMode() {
+  isDraggableMode = !isDraggableMode;
+  toggleButton.classList.toggle('off', !isDraggableMode);
+  toggleButton.classList.toggle('on', isDraggableMode);
+}
+
+toggleButton.addEventListener('click', toggleDragMode);
+controller.addEventListener("mousedown", startDrag);
+controller.addEventListener("touchstart", startDrag);
+
+
+// 스와이프를 통한 지렁이 이동기능
 canvas.addEventListener("touchstart", handleTouchStart, false);
 canvas.addEventListener("touchend", handleTouchEnd, false);
 
