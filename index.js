@@ -1,4 +1,6 @@
 const canvas = document.getElementById("game");
+canvas.width = 400;
+canvas.height = 400;
 const ctx = canvas.getContext("2d");
 
 // localStorage.removeItem('highScore')
@@ -10,11 +12,12 @@ class SnakePart {
 }
 
 let isGameStarted = false; // 게임 상태 체크
+let isWallLessMode = false; // 벽 없는 모드 상태
 
 let speed = 5;
 
 let tileCount = 20;
-let tileSize = canvas.width / tileCount -1;
+let tileSize = canvas.width / tileCount -2; //타일 크기
 
 let headX = 10;
 let headY = 10;
@@ -244,6 +247,19 @@ function drawSnake() {
 function changeSnakePosition() {
   headX = headX + xVelocity;
   headY = headY + yVelocity;
+
+  if (isWallLessMode) {
+    // 벽 없는 모드 로직
+    if (headX < 0) headX = tileCount - 1;
+    if (headX >= tileCount) headX = 0;
+    if (headY < 0) headY = tileCount - 1;
+    if (headY >= tileCount) headY = 0;
+} else {
+    // 벽 있는 모드 로직
+    if (headX < 0 || headX >= tileCount || headY < 0 || headY >= tileCount) {
+        gameOver = true;
+    }
+}
 }
 
 function drawApple() {
@@ -464,7 +480,8 @@ function checkGiftVisibility() {
   }
 }
 
-function startGame() {
+function startGame(isWallLess = false) {
+  isWallLessMode = isWallLess; // 벽 제거 모드 설정
   if (!isGameStarted) {
     isGameStarted = true;
     document.getElementById("start-screen").style.display = "none"; // 게임 시작 시 시작 화면 숨기기
