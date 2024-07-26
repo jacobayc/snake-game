@@ -17,6 +17,27 @@
         canvas{
             box-shadow: black 20px 10px 50px;
         }
+        #start-screen {
+            position: absolute;
+            top: -25%;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('path/to/your/background-image.png'); /* 배경 이미지 경로 */
+            background-size: cover;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 24px;
+            font-family: Arial, sans-serif;
+            z-index: 10;
+        }
+        #startButton {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
         #restartButton {
             display: none;
             position: absolute;
@@ -26,8 +47,8 @@
             padding: 10px 20px;
             font-size: 20px;
             cursor: pointer;
-            background-color: #f44336;
-            color: white;
+            background-color: #fff;
+            color: #000;
             border: none;
             border-radius: 5px;
         }
@@ -35,8 +56,14 @@
 </head>
 
 <body style="overscroll-behavior-y: contain; background:#313131;">
-    <h1 style="color:lavender;">Snake game</h1>
+    <h1 style="color:lavender;"></h1>
     <canvas id="game" width="400" height="400"></canvas>
+    <div id="start-screen">
+      <div>
+        <p>Welcome to the Snake Game!</p>
+        <button id="startButton" onclick="startGame()">Start Game</button>
+      </div>
+    </div>
     <button id="restartButton" onclick="restartGame()">다시 시작</button>
     <script src="index.js"></script>
 </body>

@@ -1,6 +1,7 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
+// localStorage.removeItem('highScore')
 class SnakePart {
   constructor(x, y) {
     this.x = x;
@@ -8,10 +9,12 @@ class SnakePart {
   }
 }
 
-let speed = 7;
+let isGameStarted = false; // 게임 상태 체크
+
+let speed = 5;
 
 let tileCount = 20;
-let tileSize = canvas.width / tileCount - 2;
+let tileSize = canvas.width / tileCount -1;
 
 let headX = 10;
 let headY = 10;
@@ -42,6 +45,8 @@ let giftX = Math.floor(Math.random() * tileCount);
 let giftY = Math.floor(Math.random() * tileCount);
 let giftState = 1; // 상태 값: 1, 2, 3 중 하나
 
+const giftColors = ["gold", "cyan", "salmon","lavender", "blue", "lime", "purple", "pink"];
+
 let gameStartTime;
 const giftDisplayDelay = 10000; // 선물이 노출되기까지의 지연 시간 (밀리초)
 let giftVisible = false; // 선물의 가시성 상태
@@ -55,7 +60,7 @@ const giftMessageDisplayDuration = 2000; // 메시지 노출 지속 시간 (밀�
 // case5 사과 폭탄
 let apples = []; // 랜덤 위치에 나타날 사과 배열
 let appleStartTime = 0; // 사과 노출 시작 시간
-const appleDisplayDuration = 5000; // 사과 노출 지속 시간 (밀리초)
+const appleDisplayDuration = 7000; // 사과 노출 지속 시간 (밀리초)
 
 
 canvas.addEventListener("touchstart", handleTouchStart, false);
@@ -102,12 +107,14 @@ function handleSwipe() {
 }
 
 function drawGame() {
+  if (!isGameStarted) return; // 게임이 시작되지 않았으면 drawGame을 실행하지 않음
   xVelocity = inputsXVelocity;
   yVelocity = inputsYVelocity;
 
   changeSnakePosition();
   let result = isGameOver();
   if (result) {
+    isGameStarted = false; // 게임 오버 시 게임 시작 상태를 false로 설정
     return;
   }
 
@@ -128,11 +135,11 @@ function drawGame() {
 
   checkGiftCollision(); // 선물 충돌 확인
 
-  if (score > 5) {
-    speed = 9;
+  if (score > 20) {
+    speed = 10;
   }
-  if (score > 10) {
-    speed = 11;
+  if (score > 60) {
+    speed = 20;
   }
 
   setTimeout(drawGame, 1000 / speed);
@@ -175,7 +182,7 @@ function isGameOver() {
     // 첫 번째 줄
     ctx.fillText("Game Over", canvas.width / 6.5, canvas.height / 2 - 25); 
 
-     //최고 점수 표시
+    //최고 점수 표시
     ctx.font = "20px Verdana"; // 폰트 크기 조절
     ctx.fillStyle = "white"; // 색상 조절 (필요시)
     ctx.fillText("현재 최고점수: " + highScore, canvas.width / 6.5, canvas.height / 2 + 25);
@@ -196,6 +203,7 @@ function drawScore() {
   ctx.font = "10px Verdana";
   ctx.fillText("현재 점수 " + score, canvas.width - 60, 10);
   ctx.fillText("최고 점수 " + highScore, canvas.width - 120, 10);
+
 
   // 상태 메시지를 뱀의 머리 오른쪽에 표시
   if (giftMessage) {
@@ -266,7 +274,8 @@ function drawApple() {
 function drawGift() {
   if (!giftVisible) return; // 선물이 보이지 않을 때는 그리지 않음
   
-  ctx.fillStyle = "gold"; // 선물 색상
+  const giftColor = giftColors[Math.floor(Math.random() * giftColors.length)];
+  ctx.fillStyle = giftColor; // 선물 색상
 
   const centerX = giftX * tileCount + tileSize / 2;
   const centerY = giftY * tileCount + tileSize / 2;
@@ -300,28 +309,28 @@ function checkGiftCollision() {
     switch (giftState) {
       case 1:
         // 상태 1: 점수 증가
-        score += 10;
-        giftMessage = "점수 +10";
+        score += 15;
+        giftMessage = "점수 +15";
         break;
       case 2:
-        // 상태 2: 속도 증가
-        speed += 2;
-        giftMessage = "속도 증가";
+        // 상태 2: 속도 감소
+        speed -= 3;
+        giftMessage = "속도 감소 -3";
         break;
       case 3:
         // 상태 3: 뱀의 길이 증가
-        tailLength += 4;
-        giftMessage = "길이 증가";
+        tailLength += 3;
+        giftMessage = "길이 +3";
         break;
       case 4:
       // 상태 3: 뱀의 길이 감소
-      tailLength -= 2;
-      giftMessage = "길이 감소";
+      tailLength -= 7;
+      giftMessage = "길이 -7";
       break;
       case 5:
       // 상태 5: 사과 20개 랜덤 위치에 노출
       apples = []; // 사과 배열 초기화
-      for (let i = 0; i < 20; i++) {
+      for (let i = 0; i < 30; i++) {
         apples.push({
           x: Math.floor(Math.random() * tileCount),
           y: Math.floor(Math.random() * tileCount)
@@ -455,12 +464,24 @@ function checkGiftVisibility() {
   }
 }
 
-function initializeGame() {
-  gameStartTime = Date.now();
-  giftVisible = false; // 게임 시작 시 선물은 보이지 않음
-  giftStartTime = gameStartTime; // 게임 시작 시간으로 설정
-  // 기타 초기화 코드
+function startGame() {
+  if (!isGameStarted) {
+    isGameStarted = true;
+    document.getElementById("start-screen").style.display = "none"; // 게임 시작 시 시작 화면 숨기기
+    document.getElementById("restartButton").style.display = "none"; // 재시작 버튼 숨기기
+    gameStartTime = Date.now();
+    giftVisible = false; // 게임 시작 시 선물은 보이지 않음
+    giftStartTime = gameStartTime; // 게임 시작 시간으로 설정
+    drawGame();
+  }
 }
+
+// function initializeGame() {
+//   gameStartTime = Date.now();
+//   giftVisible = false; // 게임 시작 시 선물은 보이지 않음
+//   giftStartTime = gameStartTime; // 게임 시작 시간으로 설정
+//   // 기타 초기화 코드
+// }
  
-initializeGame();
-drawGame();
+// initializeGame();
+// drawGame();
